@@ -1,10 +1,10 @@
 #ifndef CQTOPENCVVIEWERGL_H
 #define CQTOPENCVVIEWERGL_H
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <opencv2/core/core.hpp>
 
-class CQtOpenCVViewerGl : public QGLWidget
+class CQtOpenCVViewerGl : public QOpenGLWidget
 {
     Q_OBJECT
 public:
@@ -14,7 +14,7 @@ signals:
     void    imageSizeChanged( int outW, int outH ); /// Used to resize the image outside the widget
 
 public slots:
-    bool    showImage( cv::Mat image ); /// Used to set the image to be viewed
+    bool    showImage(cv::Mat image); /// Used to set the image to be viewed
 
 protected:
     void 	initializeGL(); /// OpenGL initialization

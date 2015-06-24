@@ -36,7 +36,6 @@ LIBS_PATH = "$$OPENCV_PATH/build/x86/vc10/lib" #project compiled using Visual C+
                 -lopencv_core246 \
                 -lopencv_highgui246
     }
-
 }
 
 unix {

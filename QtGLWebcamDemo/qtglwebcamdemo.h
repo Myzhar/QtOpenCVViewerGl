@@ -20,6 +20,10 @@ public:
 private slots:
     void on_actionStart_triggered();
 
+    void on_actionVertical_Flip_triggered(bool checked);
+
+    void on_action_Horizontal_Mirror_triggered(bool checked);
+
 private:
     Ui::QtGLWebcamDemo *ui;
 
@@ -27,6 +31,10 @@ private:
 
 protected:
     void timerEvent(QTimerEvent *event);
+
+private:
+    bool mFlipVert;
+    bool mFlipHoriz;
 };
 
 #endif // QTGLWEBCAMDEMO_H

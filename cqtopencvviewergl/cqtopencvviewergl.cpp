@@ -1,7 +1,9 @@
 #include "cqtopencvviewergl.h"
 
+#include <QOpenGLFunctions>
+
 CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
-    QGLWidget(parent)
+    QOpenGLWidget(parent)
 {
     mSceneChanged = false;
     mBgColor = QColor::fromRgb(150, 150, 150);
@@ -17,7 +19,14 @@ CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
 void CQtOpenCVViewerGl::initializeGL()
 {
     makeCurrent();
-    qglClearColor(mBgColor.darker());
+
+    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+    float r = ((float)mBgColor.darker().red())/255.0f;
+    float g = ((float)mBgColor.darker().green())/255.0f;
+    float b = ((float)mBgColor.darker().blue())/255.0f;
+    f->glClearColor(r,g,b,1.0f);
+
+    // qglClearColor(mBgColor.darker()); obsolete
 }
 
 void CQtOpenCVViewerGl::resizeGL(int width, int height)
@@ -56,7 +65,8 @@ void CQtOpenCVViewerGl::resizeGL(int width, int height)
 void CQtOpenCVViewerGl::updateScene()
 {
     if( mSceneChanged && this->isVisible() )
-        updateGL();
+        //updateGL(); obsolete
+        update();
 }
 
 void CQtOpenCVViewerGl::paintGL()
@@ -106,7 +116,7 @@ void CQtOpenCVViewerGl::renderImage()
             else
                 image = mRenderQtImg;
 
-            // ---> Centering image in draw area            
+            // ---> Centering image in draw area
 
             glRasterPos2i( mPosX, mPosY );
             // <--- Centering image in draw area
@@ -123,7 +133,7 @@ void CQtOpenCVViewerGl::renderImage()
     }
 }
 
-bool CQtOpenCVViewerGl::showImage( cv::Mat image )
+bool CQtOpenCVViewerGl::showImage(cv::Mat image)
 {
     image.copyTo(mOrigImage);
 
@@ -132,7 +142,7 @@ bool CQtOpenCVViewerGl::showImage( cv::Mat image )
     if( mOrigImage.channels() == 3)
         mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
                               mOrigImage.cols, mOrigImage.rows,
-                              mOrigImage.step, QImage::Format_RGB888).rgbSwapped();
+                              mOrigImage.step, QImage::Format_RGB888)/*.rgbSwapped()*/;
     else if( mOrigImage.channels() == 1)
         mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
                               mOrigImage.cols, mOrigImage.rows,
@@ -140,7 +150,7 @@ bool CQtOpenCVViewerGl::showImage( cv::Mat image )
     else
         return false;
 
-    mRenderQtImg = QGLWidget::convertToGLFormat(mRenderQtImg);
+    //mRenderQtImg = QGLWidget::convertToGLFormat(mRenderQtImg); obsolete
 
     mSceneChanged = true;
 
