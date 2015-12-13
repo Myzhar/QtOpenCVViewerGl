@@ -2,9 +2,10 @@
 #define CQTOPENCVVIEWERGL_H
 
 #include <QOpenGLWidget>
+#include <QOpenGLFunctions_2_0>
 #include <opencv2/core/core.hpp>
 
-class CQtOpenCVViewerGl : public QOpenGLWidget
+class CQtOpenCVViewerGl : public QOpenGLWidget, protected QOpenGLFunctions_2_0
 {
     Q_OBJECT
 public:

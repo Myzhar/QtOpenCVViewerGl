@@ -19,12 +19,12 @@ CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
 void CQtOpenCVViewerGl::initializeGL()
 {
     makeCurrent();
+    initializeOpenGLFunctions();
 
-    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
     float r = ((float)mBgColor.darker().red())/255.0f;
     float g = ((float)mBgColor.darker().green())/255.0f;
     float b = ((float)mBgColor.darker().blue())/255.0f;
-    f->glClearColor(r,g,b,1.0f);
+    glClearColor(r,g,b,1.0f);
 
     // qglClearColor(mBgColor.darker()); obsolete
 }
