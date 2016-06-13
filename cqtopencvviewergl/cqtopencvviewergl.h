@@ -15,7 +15,7 @@ signals:
     void    imageSizeChanged( int outW, int outH ); /// Used to resize the image outside the widget
 
 public slots:
-    bool    showImage(cv::Mat image); /// Used to set the image to be viewed
+    bool    showImage(const cv::Mat& image); /// Used to set the image to be viewed
 
 protected:
     void 	initializeGL(); /// OpenGL initialization
@@ -26,20 +26,21 @@ protected:
     void        renderImage();
 
 private:
-    bool        mSceneChanged;          /// Indicates when OpenGL view is to be redrawn
 
     QImage      mRenderQtImg;           /// Qt image to be rendered
+    QImage      mResizedImg;
     cv::Mat     mOrigImage;             /// original OpenCV image to be shown
 
     QColor      mBgColor;		/// Background color
 
-    int         mOutH;                  /// Resized Image height
-    int         mOutW;                  /// Resized Image width
     float       mImgRatio;             /// height/width ratio
 
-    int         mPosX;                  /// Top left X position to render image in the center of widget
-    int         mPosY;                  /// Top left Y position to render image in the center of widget
+    int mRenderWidth;
+    int mRenderHeight;
+    int mRenderPosX;
+    int mRenderPosY;
 
+    void recalculatePosition();
 };
 
 #endif // CQTOPENCVVIEWERGL_H

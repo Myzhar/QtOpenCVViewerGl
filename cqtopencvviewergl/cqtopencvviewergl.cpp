@@ -1,19 +1,12 @@
 #include "cqtopencvviewergl.h"
 
 #include <QOpenGLFunctions>
+#include <opencv2/opencv.hpp>
 
 CQtOpenCVViewerGl::CQtOpenCVViewerGl(QWidget *parent) :
-    QOpenGLWidget(parent)
+QOpenGLWidget(parent)
 {
-    mSceneChanged = false;
     mBgColor = QColor::fromRgb(150, 150, 150);
-
-    mOutH = 0;
-    mOutW = 0;
-    mImgRatio = 4.0f/3.0f;
-
-    mPosX = 0;
-    mPosY = 0;
 }
 
 void CQtOpenCVViewerGl::initializeGL()
@@ -25,8 +18,6 @@ void CQtOpenCVViewerGl::initializeGL()
     float g = ((float)mBgColor.darker().green())/255.0f;
     float b = ((float)mBgColor.darker().blue())/255.0f;
     glClearColor(r,g,b,1.0f);
-
-    // qglClearColor(mBgColor.darker()); obsolete
 }
 
 void CQtOpenCVViewerGl::resizeGL(int width, int height)
@@ -37,50 +28,29 @@ void CQtOpenCVViewerGl::resizeGL(int width, int height)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    glOrtho(0, width, 0, height, 0, 1);	// To Draw image in the center of the area
+    glOrtho(0, width, -height, 0, 0, 1);
 
     glMatrixMode(GL_MODELVIEW);
 
-    // ---> Scaled Image Sizes
-    mOutH = width/mImgRatio;
-    mOutW = width;
+    recalculatePosition();
 
-    if(mOutH>height)
-    {
-        mOutW = height*mImgRatio;
-        mOutH = height;
-    }
-
-    emit imageSizeChanged( mOutW, mOutH );
-    // <--- Scaled Image Sizes
-
-    mPosX = (width-mOutW)/2;
-    mPosY = (height-mOutH)/2;
-
-    mSceneChanged = true;
+    emit imageSizeChanged(mRenderWidth, mRenderHeight);
 
     updateScene();
 }
 
 void CQtOpenCVViewerGl::updateScene()
 {
-    if( mSceneChanged && this->isVisible() )
-        //updateGL(); obsolete
-        update();
+    if (this->isVisible()) update();
 }
 
 void CQtOpenCVViewerGl::paintGL()
 {
     makeCurrent();
 
-    if( !mSceneChanged )
-        return;
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     renderImage();
-
-    mSceneChanged = false;
 }
 
 void CQtOpenCVViewerGl::renderImage()
@@ -93,38 +63,25 @@ void CQtOpenCVViewerGl::renderImage()
     {
         glLoadIdentity();
 
-        QImage image; // the image rendered
-
         glPushMatrix();
         {
-            int imW = mRenderQtImg.width();
-            int imH = mRenderQtImg.height();
-
-            // The image is to be resized to fit the widget?
-            if( imW != this->size().width() &&
-                    imH != this->size().height() )
+            if (mResizedImg.width() <= 0)
             {
-
-                image = mRenderQtImg.scaled( //this->size(),
-                                             QSize(mOutW,mOutH),
-                                             Qt::IgnoreAspectRatio,
-                                             Qt::SmoothTransformation
-                                             );
-
-                //qDebug( QString( "Image size: (%1x%2)").arg(imW).arg(imH).toAscii() );
+                if (mRenderWidth == mRenderQtImg.width() && mRenderHeight == mRenderQtImg.height())
+                    mResizedImg = mRenderQtImg;
+                else
+                    mResizedImg = mRenderQtImg.scaled(QSize(mRenderWidth, mRenderHeight),
+                                                      Qt::IgnoreAspectRatio,
+                                                      Qt::SmoothTransformation);
             }
-            else
-                image = mRenderQtImg;
 
             // ---> Centering image in draw area
 
-            glRasterPos2i( mPosX, mPosY );
-            // <--- Centering image in draw area
+            glRasterPos2i(mRenderPosX, mRenderPosY);
 
-            imW = image.width();
-            imH = image.height();
+            glPixelZoom(1, -1);
 
-            glDrawPixels( imW, imH, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+            glDrawPixels(mResizedImg.width(), mResizedImg.height(), GL_RGBA, GL_UNSIGNED_BYTE, mResizedImg.bits());
         }
         glPopMatrix();
 
@@ -133,26 +90,38 @@ void CQtOpenCVViewerGl::renderImage()
     }
 }
 
-bool CQtOpenCVViewerGl::showImage(cv::Mat image)
+void CQtOpenCVViewerGl::recalculatePosition()
 {
-    image.copyTo(mOrigImage);
+    mImgRatio = (float)mOrigImage.cols/(float)mOrigImage.rows;
 
-    mImgRatio = (float)image.cols/(float)image.rows;
+    mRenderWidth = this->size().width();
+    mRenderHeight = floor(mRenderWidth / mImgRatio);
 
-    if( mOrigImage.channels() == 3)
-        mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
-                              mOrigImage.cols, mOrigImage.rows,
-                              mOrigImage.step, QImage::Format_RGB888)/*.rgbSwapped()*/;
-    else if( mOrigImage.channels() == 1)
-        mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
-                              mOrigImage.cols, mOrigImage.rows,
-                              mOrigImage.step, QImage::Format_Indexed8);
-    else
-        return false;
+    if (mRenderHeight > this->size().height())
+    {
+        mRenderHeight = this->size().height();
+        mRenderWidth = floor(mRenderHeight * mImgRatio);
+    }
 
-    //mRenderQtImg = QGLWidget::convertToGLFormat(mRenderQtImg); obsolete
+    mRenderPosX = floor((this->size().width() - mRenderWidth) / 2);
+    mRenderPosY = -floor((this->size().height() - mRenderHeight) / 2);
 
-    mSceneChanged = true;
+    mResizedImg = QImage();
+}
+
+bool CQtOpenCVViewerGl::showImage(const cv::Mat& image)
+{
+    if (image.channels() == 3)
+        cvtColor(image, mOrigImage, CV_BGR2RGBA);
+    else if (mOrigImage.channels() == 1)
+        cvtColor(image, mOrigImage, CV_GRAY2RGBA);
+    else return false;
+
+    mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
+                          mOrigImage.cols, mOrigImage.rows,
+                          mOrigImage.step1(), QImage::Format_RGB32);
+
+    recalculatePosition();
 
     updateScene();
 
