@@ -113,7 +113,7 @@ bool CQtOpenCVViewerGl::showImage(const cv::Mat& image)
 {
     if (image.channels() == 3)
         cvtColor(image, mOrigImage, CV_BGR2RGBA);
-    else if (mOrigImage.channels() == 1)
+    else if (image.channels() == 1)
         cvtColor(image, mOrigImage, CV_GRAY2RGBA);
     else return false;
 
