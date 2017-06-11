@@ -55,6 +55,8 @@ void CQtOpenCVViewerGl::paintGL()
 
 void CQtOpenCVViewerGl::renderImage()
 {
+
+	drawMutex.lock();
     makeCurrent();
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -80,14 +82,17 @@ void CQtOpenCVViewerGl::renderImage()
             glRasterPos2i(mRenderPosX, mRenderPosY);
 
             glPixelZoom(1, -1);
-
+			
             glDrawPixels(mResizedImg.width(), mResizedImg.height(), GL_RGBA, GL_UNSIGNED_BYTE, mResizedImg.bits());
+			
         }
         glPopMatrix();
 
         // end
         glFlush();
     }
+
+	drawMutex.unlock();
 }
 
 void CQtOpenCVViewerGl::recalculatePosition()
@@ -111,19 +116,22 @@ void CQtOpenCVViewerGl::recalculatePosition()
 
 bool CQtOpenCVViewerGl::showImage(const cv::Mat& image)
 {
+	drawMutex.lock();
     if (image.channels() == 3)
         cvtColor(image, mOrigImage, CV_BGR2RGBA);
     else if (image.channels() == 1)
         cvtColor(image, mOrigImage, CV_GRAY2RGBA);
+	else if (image.channels() == 4)
+		mOrigImage = image;
     else return false;
 
     mRenderQtImg = QImage((const unsigned char*)(mOrigImage.data),
                           mOrigImage.cols, mOrigImage.rows,
                           mOrigImage.step1(), QImage::Format_RGB32);
-
+	
     recalculatePosition();
 
     updateScene();
-
+	drawMutex.unlock();
     return true;
 }

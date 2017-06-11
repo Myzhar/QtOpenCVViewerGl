@@ -4,7 +4,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_2_0>
 #include <opencv2/core/core.hpp>
-
+#include <boost\thread\thread.hpp>
 class CQtOpenCVViewerGl : public QOpenGLWidget, protected QOpenGLFunctions_2_0
 {
     Q_OBJECT
@@ -41,6 +41,8 @@ private:
     int mRenderPosY;
 
     void recalculatePosition();
+
+	boost::mutex drawMutex;
 };
 
 #endif // CQTOPENCVVIEWERGL_H
